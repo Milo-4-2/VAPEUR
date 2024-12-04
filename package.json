@@ -4,16 +4,17 @@
   "description": "Welcome to VAPEUR!\r VAPEUR is a web application that allows to manage a video games collection.",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.0.0",
+    "@prisma/client": "^6.0.1",
     "express": "^4.21.1",
     "hbs": "^4.2.0",
-    "prisma": "^6.0.0",
+    "prisma": "^6.0.1",
     "sqlite3": "^5.1.7"
   }
 }
