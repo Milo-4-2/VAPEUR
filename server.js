@@ -1,27 +1,40 @@
+// Import the Express framework for building web applications
 const express = require("express");
-const path = require("path"); // Import the path module
+
+// Import the path module for handling file and directory paths
+const path = require("path");
+
+// Initialize the Express application
 const app = express();
-app.disable("view cache");
-//const { PrismaClient } = require("@prisma/client");
-const bodyParser = require("body-parser");
-//const prisma = new PrismaClient();
+
+// Cconfigure PrismaClient for database operations
+// const { PrismaClient } = require("@prisma/client");
+// const prisma = new PrismaClient();
+
+// Import the body parser module to parse incoming request bodies
+//const bodyParser = require("body-parser");
+
+// Import the Handlebars template engine
 const hbs = require("hbs");
-//console.log("HBS loaded:", hbs);
-app.set("view engine", "hbs"); // On définit le moteur de template que Express va utiliser
-app.set("views", path.join(__dirname, "views")); // On définit le dossier des vues (dans lequel se trouvent les fichiers .hbs)
-hbs.registerPartials(path.join(__dirname, "views", "partials")); // On définit le dossier des partials (composants e.g. header, footer, menu...)
-app.engine('hbs', require('hbs').__express);
+
+// Set Handlebars as the template engine for Express
+app.set("view engine", "hbs");
+
+// Specify the directory where view templates are located (.hbs files)
+app.set("views", path.join(__dirname, "views"));
+
+// Register the directory for partial templates used in Handlebars (header, footer, etc.)
+hbs.registerPartials(path.join(__dirname, "views", "partials"));
+
+// Define the port on which the server will listen for incoming requests
 const PORT = 3000;
 
-app.get("/", async (req, res) => {
-    // on passe seulement le nom du fichier .hbs sans l'extention.
-    // Le chemin est relatif au dossier `views`.
-    // On peut aller chercher des templates dans les sous-dossiers (e.g. `movies/details`).
+// Define a route for the root URL that renders the "index.hbs" template (views/index.hbs)
+app.get("/", (req, res) => {
     res.render("index");
-    //res.sendFile(path.join(__dirname, "views", "index.hbs"));
-    //res.send("Hello, World!");
 });
 
+// Start the server and log a message to indicate that it is running
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
