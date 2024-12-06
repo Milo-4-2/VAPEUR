@@ -12,3 +12,26 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+model Genre {
+  id   Int    @id
+  name String
+  game Game[]
+}
+
+model Editor {
+  id   Int    @id @default(autoincrement())
+  name String
+  game Game[]
+}
+
+model Game {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  releaseDate DateTime
+  genreId     Int
+  genre       Genre    @relation(fields: [genreId], references: [id])
+  editorId    Int
+  editor      Editor   @relation(fields: [editorId], references: [id])
+}

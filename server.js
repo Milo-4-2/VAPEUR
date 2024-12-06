@@ -8,11 +8,11 @@ const path = require("path");
 const app = express();
 
 // Cconfigure PrismaClient for database operations
-// const { PrismaClient } = require("@prisma/client");
-// const prisma = new PrismaClient();
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 // Import the body parser module to parse incoming request bodies
-//const bodyParser = require("body-parser");
+const bodyParser = require("body-parser");
 
 // Import the Handlebars template engine
 const hbs = require("hbs");
@@ -30,7 +30,7 @@ hbs.registerPartials(path.join(__dirname, "views", "partials"));
 const PORT = 3000;
 
 // Define a route for the root URL that renders the "index.hbs" template (views/index.hbs)
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
     res.render("index");
 });
 
