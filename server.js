@@ -7,6 +7,9 @@ const path = require("path");
 // Initialize the Express application
 const app = express();
 
+// Define a folder for static files
+app.use(express.static("public"));
+
 // Cconfigure PrismaClient for database operations
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
@@ -32,6 +35,11 @@ const PORT = 3000;
 // Define a route for the root URL that renders the "index.hbs" template (views/index.hbs)
 app.get("/", async (req, res) => {
     res.render("index");
+});
+
+app.get("/addnewgame", async (req, res) => {
+    const genres = await prisma.genre.findMany();
+    res.render("games/newGame", {genres});
 });
 
 // Start the server and log a message to indicate that it is running

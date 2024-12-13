@@ -1,0 +1,24 @@
+<form id="newGame">
+    <h1>Add a new game to VAPEUR's collection</h1>
+
+    <label>Name</label><br>
+    <input type="text" id="name" name="name" placeholder="Enter a name" required><br><br>
+
+    <label>Description</label><br>
+    <textarea id="description" name="description" placeholder="Enter a description"
+        style="resize: none;"></textarea><br><br>
+
+    <label>Release date</label><br>
+    <input type="date" id="releaseDate" name="releaseDate" required><br><br>
+
+    <label>Genre</label><br>
+    <select id="genre">
+        <option value="" disabled selected>-- Select a genre --</option>
+        
+        {{#each genres}}
+        <option value="{{this.id}}">{{this.name}}</option>
+        {{/each}}
+    </select><br><br>
+
+    <input type="submit" value="Submit">
+</form>
