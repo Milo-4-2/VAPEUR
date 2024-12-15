@@ -1,7 +1,7 @@
 {
   "name": "vapeur",
   "version": "1.0.0",
-  "description": "Welcome to VAPEUR!\r VAPEUR is a web application that allows to manage a video games collection.",
+  "description": "web application",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,10 +14,11 @@
     "@prisma/client": "^6.0.1",
     "express": "^4.21.1",
     "hbs": "^4.2.0",
+    "multer": "^1.4.5-lts.1",
     "prisma": "^6.0.1",
     "sqlite3": "^5.1.7"
   },
   "prisma": {
-  "seed": "node prisma/seed.js"
-}
+    "seed": "node prisma/seed.js"
+  }
 }

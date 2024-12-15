@@ -1,24 +1,38 @@
-<form id="newGame">
+<form id="newGame" method="POST" enctype="multipart/form-data">
     <h1>Add a new game to VAPEUR's collection</h1>
 
-    <label>Name</label><br>
+    <label for="name">Name</label><br>
     <input type="text" id="name" name="name" placeholder="Enter a name" required><br><br>
 
-    <label>Description</label><br>
+    <label for="description">Description</label><br>
     <textarea id="description" name="description" placeholder="Enter a description"
         style="resize: none;"></textarea><br><br>
 
-    <label>Release date</label><br>
+    <label for="releaseDate">Release date</label><br>
     <input type="date" id="releaseDate" name="releaseDate" required><br><br>
 
-    <label>Genre</label><br>
-    <select id="genre">
-        <option value="" disabled selected>-- Select a genre --</option>
+    <label for="editor">Editor</label><br>
+    <select id="editor" name="editor">
+        <option value="0" disabled selected>-- Select an editor --</option>
+        
+        {{#each editors}}
+        <option value="{{this.id}}">{{this.name}}</option>
+        {{/each}}
+    </select><br><br>
+
+    <label for="genre">Genre</label><br>
+    <select id="genre" name="genre">
+        <option value="0" disabled selected>-- Select a genre --</option>
         
         {{#each genres}}
         <option value="{{this.id}}">{{this.name}}</option>
         {{/each}}
     </select><br><br>
 
+    <label for="cover">Cover</label><br>
+    <input type="file" id="cover" name="cover" accept="image/*"><br><br>
+
     <input type="submit" value="Submit">
 </form>
+
+<script src="/scripts/newGame.js"></script>

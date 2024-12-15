@@ -31,6 +31,7 @@ model Game {
   description String
   releaseDate DateTime
   genreId     Int
+  coverPath   String?
   genre       Genre    @relation(fields: [genreId], references: [id])
   editorId    Int
   editor      Editor   @relation(fields: [editorId], references: [id])
