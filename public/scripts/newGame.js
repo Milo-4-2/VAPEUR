@@ -16,9 +16,7 @@ form.addEventListener("submit", async function (event) {
     formData.append("releaseDate", releaseDate);
     formData.append("editor", editor);
     formData.append("genre", genre);
-    if (cover) {
-        formData.append("cover", cover); // Only append if a file is selected
-    }
+    formData.append("cover", cover);
 
     if (editor == 0)
     {

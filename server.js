@@ -50,10 +50,6 @@ app.get("/add-new-game", async (req, res) => {
 app.post("/submit-game", upload.single("cover"), async (req, res) => {
     const { name, description, releaseDate, editor, genre } = req.body;
 
-    if (!req.file) {
-        return res.status(400).json({ message: "Cover image is required" });
-    }
-
     const timestamp = Date.now();
     const outputFilename = `${timestamp}-${req.file.originalname.split('.')[0]}.jpeg`;
     const outputPath = path.join(__dirname, "public/covers", outputFilename);
@@ -80,6 +76,34 @@ app.post("/submit-game", upload.single("cover"), async (req, res) => {
     } catch (error) {
         console.error("Error saving game:", error);
         res.status(400).json({ message: "Failed to save game" });
+    }
+});
+
+app.get("/editors", async (req, res) => {
+    // Query the Prisma database to get all the possible video game editors
+    const editors = await prisma.editor.findMany();
+    res.render("games/editors", {editors, title: "VAPEUR - Editors"});
+});
+
+app.get("/add-new-editor", async (req, res) => {
+    res.render("games/newEditor", {title: "VAPEUR - Add a new editor"});
+});
+
+app.post("/submit-editor", upload.none(), async (req, res) => {
+    const { name } = req.body;
+
+    try {
+    
+        const newEditor = await prisma.editor.create({
+            data: {
+                name,
+            },
+        });
+    
+        res.status(201).json({ message: "Editor created successfully!", game: newEditor });
+    } catch (error) {
+        console.error("Error when creating editor:", error);
+        res.status(500).json({ message: "An error occurred while creating the editor.\nThis might occur because the editor already exists." });
     }
 });
 
