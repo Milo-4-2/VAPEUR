@@ -1,1 +1,16 @@
-<h1>Hello World !</h1>
+<h1>Game collection</h1>
+
+{{#if games.length}}
+<div id="gameList">
+    {{#each games}}
+        <div id="gameDiv">
+            <img src="{{this.coverPath}}" id="gameCover" alt="{{this.name}} cover">
+            <p id="gameName">{{this.name}}</p>
+            <a href="/editor/{{this.editorId}}">{{this.editor.name}}</a>
+            <p id="releaseDate">Released on : {{this.releaseDate}}</p>
+        </div>
+    {{/each}}
+</div>
+{{else}}
+<p>No games found.</p>
+{{/if}}

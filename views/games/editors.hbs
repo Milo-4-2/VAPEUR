@@ -1,2 +1,17 @@
 <a href="/add-new-editor">Add a new editor</a>
 
+<h1>List of Editors</h1>
+
+{{#if editors.length}}
+<ul>
+    {{#each editors}}
+    <div>
+        <li>
+            <a href="/editor/{{this.id}}">{{this.name}}</a> <!-- Link to editor details -->
+        </li>
+        {{/each}}
+    </div>
+</ul>
+{{else}}
+<p>No editors found.</p>
+{{/if}}

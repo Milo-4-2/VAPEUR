@@ -72,5 +72,28 @@ npx prisma init
 npx prisma generate
 ```
 
+But the database isn't actually created it yet. In order to create it, enter this in the terminal :
+
+```bash
+npx prisma migrate dev --name init
+```
+
+Then, you'll need to generate the Prisma client that will allow the app to interact with the database. To do so, enter this in the terminal :
+
+```bash
+npx prisma generate
+```
+
 ### 5 - Install Handlebars
+
+VAPEUR uses **Handlebars**.  
+**Handlebars** is a templating engine for JavaScript designed to create dynamic HTML.
+
+To install **Prisma**, navigate in the File Explorer to the location where the **main VAPEUR folder** is saved, right-click it and select '**Open in Terminal**'. In the terminal that opens, enter the following commands :
+
+```bash
+npm install hbs
+```
+
+### 6 - Install Sharp
 

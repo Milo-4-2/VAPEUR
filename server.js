@@ -35,7 +35,40 @@ const PORT = 3000; // Define the port on which the server will listen for incomi
 
 // Define a route for the root URL that renders the "index.hbs" template (views/index.hbs)
 app.get("/", async (req, res) => {
-    res.render("index");
+    const games = await prisma.game.findMany({
+        select: {
+            id: true,          // Game ID
+            name: true,        // Game name
+            description: true,
+            releaseDate: true,
+            genreId: true,
+            coverPath: true,
+            editorId: true,
+            genre: {
+                select: {
+                    name: true, // Genre name
+                },
+            },
+            editor: {
+                select: {
+                    name: true, // Editor name
+                },
+            },
+        },
+        orderBy: {
+            name: 'desc', // Sort by name in descending order
+        },
+    });
+
+    games.forEach(game => {
+        game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      });
+
+    res.render("index", { games, title: "VAPEUR - Games" });
 });
 
 // Define a route for the "add a new game" page's URL that renders the "newGame.hbs" template (views/games/newGame.hbs)
@@ -44,7 +77,7 @@ app.get("/add-new-game", async (req, res) => {
     const genres = await prisma.genre.findMany();
     const editors = await prisma.editor.findMany();
     // Pass the genres to the template to show them in the HTML <select> tag of the "add a new game" page
-    res.render("games/newGame", {genres, editors, title: "VAPEUR - Add a new game"});
+    res.render("games/newGame", { genres, editors, title: "VAPEUR - Add a new game" });
 });
 
 app.post("/submit-game", upload.single("cover"), async (req, res) => {
@@ -65,7 +98,7 @@ app.post("/submit-game", upload.single("cover"), async (req, res) => {
             data: {
                 name,
                 description,
-                releaseDate : new Date(releaseDate), // Convert to Date object
+                releaseDate: new Date(releaseDate), // Convert to Date object
                 editorId: parseInt(editor, 10),
                 genreId: parseInt(genre, 10),
                 coverPath: `covers/${path.basename(outputPath)}`, // Save relative path to the database
@@ -82,28 +115,54 @@ app.post("/submit-game", upload.single("cover"), async (req, res) => {
 app.get("/editors", async (req, res) => {
     // Query the Prisma database to get all the possible video game editors
     const editors = await prisma.editor.findMany();
-    res.render("games/editors", {editors, title: "VAPEUR - Editors"});
+    res.render("games/editors", { editors, title: "VAPEUR - Editors" });
 });
 
 app.get("/add-new-editor", async (req, res) => {
-    res.render("games/newEditor", {title: "VAPEUR - Add a new editor"});
+    res.render("games/newEditor", { title: "VAPEUR - Add a new editor" });
 });
 
 app.post("/submit-editor", upload.none(), async (req, res) => {
     const { name } = req.body;
 
     try {
-    
+
         const newEditor = await prisma.editor.create({
             data: {
                 name,
             },
         });
-    
+
         res.status(201).json({ message: "Editor created successfully!", game: newEditor });
     } catch (error) {
         console.error("Error when creating editor:", error);
         res.status(500).json({ message: "An error occurred while creating the editor.\nThis might occur because the editor already exists." });
+    }
+});
+
+app.get("/editor/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Fetch the editor by ID
+        const editor = await prisma.editor.findUnique({
+            where: {
+                id: parseInt(id, 10),
+            },
+            include: {
+                game: true, // Include related games if needed
+            },
+        });
+
+        if (!editor) {
+            return res.status(404).render("404", { message: "Editor not found" });
+        }
+
+        // Render the editorDetails.hbs template with editor data
+        res.render("games/editorDetails", { editor });
+    } catch (error) {
+        console.error("Error fetching editor details:", error);
+        res.status(500).render("500", { message: "An error occurred while fetching editor details." });
     }
 });
 

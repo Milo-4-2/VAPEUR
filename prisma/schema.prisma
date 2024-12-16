@@ -32,7 +32,7 @@ model Game {
   releaseDate DateTime
   genreId     Int
   coverPath   String?
-  genre       Genre    @relation(fields: [genreId], references: [id])
+  genre       Genre    @relation(fields: [genreId], references: [id], onDelete: Cascade)
   editorId    Int
-  editor      Editor   @relation(fields: [editorId], references: [id])
+  editor      Editor   @relation(fields: [editorId], references: [id], onDelete: Cascade)
 }
