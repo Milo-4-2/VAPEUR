@@ -18,14 +18,16 @@ const hbs = require("hbs"); // Import the Handlebars template engine
 const multer = require("multer");
 const sharp = require("sharp");
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, "public/covers")); // Save files in public/covers
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname); // Add a timestamp to avoid duplicate filenames
-    },
-});
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, path.join(__dirname, "public/covers")); // Save files in public/covers
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, Date.now() + "-" + file.originalname); // Add a timestamp to avoid duplicate filenames
+//     },
+// });
+
+const storage = multer.memoryStorage();
 
 const upload = multer({ storage });
 
@@ -57,7 +59,20 @@ app.get("/add-new-game", async (req, res) => {
 app.post("/submit-game", upload.single("cover"), async (req, res) => {
     const { name, description, releaseDate, editor, genre } = req.body;
 
+    if (!req.file) {
+        return res.status(400).json({ message: "Cover image is required" });
+    }
+
+    const timestamp = Date.now();
+    const outputFilename = `${timestamp}-${req.file.originalname.split('.')[0]}.jpeg`;
+    const outputPath = path.join(__dirname, "public/covers", outputFilename);
+
     try {
+        await sharp(req.file.buffer)
+            .resize({ width: 400, height: 600, fit: "cover" }) // Crop to 300x300 pixels
+            .jpeg({ quality: 80 }) // Compress to 80% quality
+            .toFile(outputPath);
+
         // Save data to the database
         const newGame = await prisma.game.create({
             data: {
@@ -66,7 +81,8 @@ app.post("/submit-game", upload.single("cover"), async (req, res) => {
                 releaseDate : new Date(releaseDate), // Convert to Date object
                 editorId: parseInt(editor, 10),
                 genreId: parseInt(genre, 10),
-                coverPath: req.file ? `covers/${req.file.filename}` : null, // Store relative path
+                //coverPath: req.file ? `covers/${req.file.filename}` : null, // Store relative path
+                coverPath: `covers/${path.basename(outputPath)}`, // Save relative path to the database
             },
         });
 
