@@ -18,15 +18,6 @@ const hbs = require("hbs"); // Import the Handlebars template engine
 const multer = require("multer");
 const sharp = require("sharp");
 
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, path.join(__dirname, "public/covers")); // Save files in public/covers
-//     },
-//     filename: (req, file, cb) => {
-//         cb(null, Date.now() + "-" + file.originalname); // Add a timestamp to avoid duplicate filenames
-//     },
-// });
-
 const storage = multer.memoryStorage();
 
 const upload = multer({ storage });
@@ -69,7 +60,7 @@ app.post("/submit-game", upload.single("cover"), async (req, res) => {
 
     try {
         await sharp(req.file.buffer)
-            .resize({ width: 400, height: 600, fit: "cover" }) // Crop to 300x300 pixels
+            .resize({ width: 400, height: 600, fit: "cover" }) // Crop to 400x600 pixels
             .jpeg({ quality: 80 }) // Compress to 80% quality
             .toFile(outputPath);
 
@@ -81,7 +72,6 @@ app.post("/submit-game", upload.single("cover"), async (req, res) => {
                 releaseDate : new Date(releaseDate), // Convert to Date object
                 editorId: parseInt(editor, 10),
                 genreId: parseInt(genre, 10),
-                //coverPath: req.file ? `covers/${req.file.filename}` : null, // Store relative path
                 coverPath: `covers/${path.basename(outputPath)}`, // Save relative path to the database
             },
         });
