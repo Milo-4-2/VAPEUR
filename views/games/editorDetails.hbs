@@ -1,1 +1,17 @@
-<p>hello world</p>
+<h1>Games edited by {{editor.name}}</h1>
+
+{{#if games.length}}
+<div id="gameList">
+    {{#each games}}
+    <div id="gameDiv">
+        <a href="/game/{{this.id}}">
+            <img src="/{{this.coverPath}}" id="gameCover" alt="{{this.name}} cover">
+        </a>
+        <a href="/game/{{this.id}}" id="gameName">{{this.name}}</a>
+        <p id="releaseDate">{{this.releaseDate}}</p>
+    </div>
+    {{/each}}
+</div>
+{{else}}
+<p id="noneFound">No games found.</p>
+{{/if}}

@@ -1,0 +1,18 @@
+<div id="gameDetails">
+    <img src="/{{game.coverPath}}" id="gameCoverBig" alt="{{game.name}} cover">
+    <div id="gameInfo">
+        <h1 id="gameTitle">{{game.name}}</h1>
+        <p id="gameEditor">
+            Editor : <a href="/editor/{{game.editorId}}" id="gameEditorLink">{{game.editor.name}}</a>
+        </p>
+        <p id="gameGenre">
+            Genre : <a href="/genre/{{game.genreId}}" id="gameGenreLink">{{game.genre.name}}</a>
+        </p>
+        <p id="gameReleaseDate">Release date : {{game.releaseDate}}</p>
+        <h2 id="gameDescriptionTitle">Description :</h2>
+        <p id="gameDescription">{{game.description}}</p>
+    </div>
+</div>
+
+<a href="/edit-game/{{game.id}}" id="gameButton">Edit game</a>
+<a href="/delete-game/{{game.id}}" id="gameButton">Delete game</a>

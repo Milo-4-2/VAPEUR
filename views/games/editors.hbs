@@ -2,16 +2,16 @@
 
 <h1>List of Editors</h1>
 
-{{#if editors.length}}
-<ul>
+<div id="editorList">
+    {{#if editors.length}}
     {{#each editors}}
-    <div>
-        <li>
-            <a href="/editor/{{this.id}}">{{this.name}}</a> <!-- Link to editor details -->
-        </li>
-        {{/each}}
-    </div>
-</ul>
+    <a href="/editor/{{this.id}}" id="editorLink">
+        <div id="editorInList">
+            {{this.name}} <!-- Link to editor details -->
+            {{/each}}
+        </div>
+    </a>
+</div>
 {{else}}
-<p>No editors found.</p>
+<p id="noneFound">No editors found.</p>
 {{/if}}

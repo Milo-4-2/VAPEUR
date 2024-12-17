@@ -1,20 +1,21 @@
-<form id="newGame" method="POST" enctype="multipart/form-data">
-    <h1>Add a new game to the collection</h1>
+<form id="editGame" method="POST">
+    <h1>Edit a game</h1>
 
     <label for="name">Name</label>
-    <input type="text" id="name" name="name" placeholder="Enter a name" required><br>
+    <input type="text" id="name" name="name" placeholder="Enter a name" value="{{game.name}}" required><br>
 
     <label for="description">Description</label>
     <textarea id="description" name="description" placeholder="Enter a description"
-        style="resize: none;"></textarea><br>
+        style="resize: none;">{{game.description}}</textarea><br>
 
+    
     <label for="releaseDate">Release date</label>
-    <input type="date" id="releaseDate" name="releaseDate" required><br>
+    <input type="date" id="releaseDate" name="releaseDate" value="{{game.releaseDate}}" required><br>
 
     <label for="editor">Editor</label>
     <select id="editor" name="editor">
         <option value="0" disabled selected>-- Select an editor --</option>
-        
+
         {{#each editors}}
         <option value="{{this.id}}">{{this.name}}</option>
         {{/each}}
@@ -23,16 +24,13 @@
     <label for="genre">Genre</label>
     <select id="genre" name="genre">
         <option value="0" disabled selected>-- Select a genre --</option>
-        
+
         {{#each genres}}
         <option value="{{this.id}}">{{this.name}}</option>
         {{/each}}
     </select><br>
 
-    <label for="cover">Cover</label><br>
-    <input type="file" id="cover" name="cover" accept="image/*" required><br>
-
-    <input type="submit" value="Submit">
+    <input type="submit" value="Submit changes">
 </form>
 
-<script src="/scripts/newGame.js"></script>
+<script src="/scripts/editGame.js"></script>

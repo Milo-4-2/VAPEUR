@@ -1,0 +1,15 @@
+<h1>List of genres</h1>
+
+<div id="genreList">
+    {{#if genres.length}}
+    {{#each genres}}
+    <a href="/genre/{{this.id}}" id="genreLink">
+        <div id="genreInList">
+            {{this.name}} <!-- Link to editor details -->
+            {{/each}}
+        </div>
+    </a>
+</div>
+{{else}}
+<p id="noneFound">No genres found.</p>
+{{/if}}

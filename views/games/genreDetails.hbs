@@ -1,18 +1,17 @@
-<h1>Games collection</h1>
+<h1>{{genre.name}} games</h1>
 
 {{#if games.length}}
 <div id="gameList">
     {{#each games}}
     <div id="gameDiv">
         <a href="/game/{{this.id}}">
-            <img src="{{this.coverPath}}" id="gameCover" alt="{{this.name}} cover">
+            <img src="/{{this.coverPath}}" id="gameCover" alt="{{this.name}} cover">
         </a>
         <a href="/game/{{this.id}}" id="gameName">{{this.name}}</a>
-        {{!-- <a href="/editor/{{this.editorId}}" id="editorName">{{this.editor.name}}</a> --}}
         <p id="releaseDate">{{this.releaseDate}}</p>
     </div>
     {{/each}}
 </div>
 {{else}}
-<p>No games found.</p>
+<p id="noneFound">No games found.</p>
 {{/if}}

@@ -22,7 +22,6 @@ const storage = multer.memoryStorage();
 
 const upload = multer({ storage });
 
-
 app.set("view engine", "hbs"); // Set Handlebars as the template engine for Express
 
 app.set("views", path.join(__dirname, "views")); // Specify the directory where view templates are located (.hbs files)
@@ -62,11 +61,11 @@ app.get("/", async (req, res) => {
 
     games.forEach(game => {
         game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
         });
-      });
+    });
 
     res.render("index", { games, title: "VAPEUR - Games" });
 });
@@ -112,10 +111,48 @@ app.post("/submit-game", upload.single("cover"), async (req, res) => {
     }
 });
 
+app.post("/submit-game-changes", upload.single("cover"), async (req, res) => {
+    const { name, description, releaseDate, editor, genre } = req.body;
+
+    const timestamp = Date.now();
+    const outputFilename = `${timestamp}-${req.file.originalname.split('.')[0]}.jpeg`;
+    const outputPath = path.join(__dirname, "public/covers", outputFilename);
+
+    try {
+        await sharp(req.file.buffer)
+            .resize({ width: 400, height: 600, fit: "cover" }) // Crop to 400x600 pixels
+            .jpeg({ quality: 80 }) // Compress to 80% quality
+            .toFile(outputPath);
+
+        // Save data to the database
+        const newGame = await prisma.game.create({
+            data: {
+                name,
+                description,
+                releaseDate: new Date(releaseDate), // Convert to Date object
+                editorId: parseInt(editor, 10),
+                genreId: parseInt(genre, 10),
+                coverPath: `covers/${path.basename(outputPath)}`, // Save relative path to the database
+            },
+        });
+
+        res.status(201).json({ message: "Game added successfully!", game: newGame });
+    } catch (error) {
+        console.error("Error saving game:", error);
+        res.status(400).json({ message: "Failed to save game" });
+    }
+});
+
 app.get("/editors", async (req, res) => {
     // Query the Prisma database to get all the possible video game editors
     const editors = await prisma.editor.findMany();
     res.render("games/editors", { editors, title: "VAPEUR - Editors" });
+});
+
+app.get("/genres", async (req, res) => {
+    // Query the Prisma database to get all the possible video game editors
+    const genres = await prisma.genre.findMany();
+    res.render("games/genres", { genres, title: "VAPEUR - Genres" });
 });
 
 app.get("/add-new-editor", async (req, res) => {
@@ -140,6 +177,56 @@ app.post("/submit-editor", upload.none(), async (req, res) => {
     }
 });
 
+app.get("/game/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Fetch the editor by ID
+        const game = await prisma.game.findUnique({
+            select: {
+                id: true,          // Game ID
+                name: true,        // Game name
+                description: true,
+                releaseDate: true,
+                genreId: true,
+                coverPath: true,
+                editorId: true,
+                genre: {
+                    select: {
+                        name: true, // Genre name
+                    },
+                },
+                editor: {
+                    select: {
+                        name: true, // Editor name
+                    },
+                },
+            },
+            where: {
+                id: parseInt(id, 10),
+            },
+        });
+
+
+        if (!game) {
+            return res.status(404).json({ message: 'Game not found' });
+        }
+        else {
+            game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            });
+        }
+
+        // Render the gameDetails.hbs template with game data
+        res.render("games/gameDetails", { game, title: `VAPEUR - ${game.name}` });
+    } catch (error) {
+        console.error("Error fetching game details:", error);
+        res.status(500).render("500", { message: "An error occurred while fetching game details." });
+    }
+});
+
 app.get("/editor/:id", async (req, res) => {
     const { id } = req.params;
 
@@ -149,20 +236,143 @@ app.get("/editor/:id", async (req, res) => {
             where: {
                 id: parseInt(id, 10),
             },
-            include: {
-                game: true, // Include related games if needed
-            },
         });
 
         if (!editor) {
             return res.status(404).render("404", { message: "Editor not found" });
         }
 
+        const games = await prisma.game.findMany({
+            select: {
+                id: true,          // Game ID
+                name: true,        // Game name
+                description: true,
+                releaseDate: true,
+                genreId: true,
+                coverPath: true,
+                editorId: true,
+                genre: {
+                    select: {
+                        name: true, // Genre name
+                    },
+                },
+                editor: {
+                    select: {
+                        name: true, // Editor name
+                    },
+                },
+            },
+            where: {
+                editorId: parseInt(id, 10),
+            },
+        });
+
+        games.forEach(game => {
+            game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            });
+        });
+
         // Render the editorDetails.hbs template with editor data
-        res.render("games/editorDetails", { editor });
+        res.render("games/editorDetails", { editor, games, title: `VAPEUR - ${editor.name}` });
     } catch (error) {
         console.error("Error fetching editor details:", error);
         res.status(500).render("500", { message: "An error occurred while fetching editor details." });
+    }
+});
+
+app.get("/genre/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Fetch the editor by ID
+        const genre = await prisma.genre.findUnique({
+            where: {
+                id: parseInt(id, 10),
+            },
+        });
+
+        if (!genre) {
+            return res.status(404).render("404", { message: "Genre not found" });
+        }
+
+        const games = await prisma.game.findMany({
+            select: {
+                id: true,          // Game ID
+                name: true,        // Game name
+                description: true,
+                releaseDate: true,
+                genreId: true,
+                coverPath: true,
+                editorId: true,
+                genre: {
+                    select: {
+                        name: true, // Genre name
+                    },
+                },
+                editor: {
+                    select: {
+                        name: true, // Editor name
+                    },
+                },
+            },
+            where: {
+                genreId: parseInt(id, 10),
+            },
+        });
+
+        games.forEach(game => {
+            game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            });
+        });
+
+        // Render the editorDetails.hbs template with editor data
+        res.render("games/genreDetails", { genre, games, title: `VAPEUR - ${genre.name}` });
+    } catch (error) {
+        console.error("Error fetching editor details:", error);
+        res.status(500).render("500", { message: "An error occurred while fetching editor details." });
+    }
+});
+
+app.get("/edit-game/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Fetch the editor by ID
+        const game = await prisma.game.findUnique({
+            select: {
+                id: true,          // Game ID
+                name: true,        // Game name
+                description: true,
+                releaseDate: true,
+                genreId: true,
+                coverPath: true,
+                editorId: true,
+            },
+            where: {
+                id: parseInt(id, 10),
+            },
+        });
+
+        if (!game) {
+            return res.status(404).json({ message: 'Game not found' });
+        }
+
+        game.releaseDate = new Date(game.releaseDate).toISOString().split("T")[0]; // "2024-06-14"
+
+        const editors = await prisma.editor.findMany();
+        const genres = await prisma.genre.findMany();
+
+        // Render the gameDetails.hbs template with game data
+        res.render("games/editGame", { game, editors, genres, title: `VAPEUR - Edit a game` });
+    } catch (error) {
+        console.error("Error fetching game:", error);
+        res.status(500).render("500", { message: "An error occurred while fetching game." });
     }
 });
 
