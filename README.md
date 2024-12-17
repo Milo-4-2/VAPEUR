@@ -75,7 +75,7 @@ To install **Prisma**, open the **main VAPEUR folder** in a terminal and enter t
 npm install prisma @prisma/client sqlite3
 ```
 
-However, the database hasn't created it yet. In order to create it, enter this in the terminal :
+However, the database hasn't been created it yet. In order to create it, enter this in the terminal :
 
 ```bash
 npx prisma migrate dev --name init
@@ -175,6 +175,6 @@ node server.js
 * Display a specific editor's games
 * Display a specific game's data
 
-### Features are still in development
+### Features still in development
 
 * Delete an editor from the database
