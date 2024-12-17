@@ -175,6 +175,6 @@ node server.js
 * Display a specific editor's games
 * Display a specific game's data
 
-### Features are still in development
+### Features still in development
 
 * Delete an editor from the database
