@@ -14,5 +14,9 @@
     </div>
 </div>
 
-<a href="/edit-game/{{game.id}}" id="gameButton">Edit game</a>
-<a href="/delete-game/{{game.id}}" id="gameButton">Delete game</a>
+<div id="editDeleteData">
+    <a href="/edit-game/{{game.id}}" id="editGameButton">Edit game</a>
+    <a id="deleteGameButton" data-game-id="{{game.id}}">Delete game</a>
+</div>
+
+<script src="/scripts/gameDetails.js"></script>

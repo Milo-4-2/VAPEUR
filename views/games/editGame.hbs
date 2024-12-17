@@ -1,6 +1,8 @@
 <form id="editGame" method="POST">
     <h1>Edit a game</h1>
 
+    <input type="hidden" id="gameId" name="gameId" value="{{game.id}}">
+
     <label for="name">Name</label>
     <input type="text" id="name" name="name" placeholder="Enter a name" value="{{game.name}}" required><br>
 

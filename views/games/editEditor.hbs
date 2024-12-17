@@ -1,0 +1,12 @@
+<form id="editEditor" method="POST">
+    <h1>Edit an editor</h1>
+
+    <input type="hidden" id="editorId" name="editorId" value="{{editor.id}}">
+
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" placeholder="Enter a name" value="{{editor.name}}" required><br>
+
+    <input type="submit" value="Submit">
+</form>
+
+<script src="/scripts/editEditor.js"></script>

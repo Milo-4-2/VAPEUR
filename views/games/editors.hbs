@@ -5,13 +5,13 @@
 <div id="editorList">
     {{#if editors.length}}
     {{#each editors}}
-    <a href="/editor/{{this.id}}" id="editorLink">
-        <div id="editorInList">
-            {{this.name}} <!-- Link to editor details -->
-            {{/each}}
-        </div>
-    </a>
+    <div class="editorInList">
+        <a href="/editor/{{this.id}}" class="editorLink">
+            {{this.name}}
+        </a>
+    </div>
+    {{/each}}
+    {{else}}
+    <p id="noneFound">No editors found.</p>
+    {{/if}}
 </div>
-{{else}}
-<p id="noneFound">No editors found.</p>
-{{/if}}

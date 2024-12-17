@@ -3,13 +3,13 @@
 <div id="genreList">
     {{#if genres.length}}
     {{#each genres}}
-    <a href="/genre/{{this.id}}" id="genreLink">
-        <div id="genreInList">
-            {{this.name}} <!-- Link to editor details -->
-            {{/each}}
-        </div>
-    </a>
+    <div class="genreInList">
+        <a href="/genre/{{this.id}}" class="genreLink">
+            {{this.name}}
+        </a>
+    </div>
+    {{/each}}
+    {{else}}
+    <p id="noneFound">No editors found.</p>
+    {{/if}}
 </div>
-{{else}}
-<p id="noneFound">No genres found.</p>
-{{/if}}

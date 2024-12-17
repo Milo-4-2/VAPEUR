@@ -1,382 +1,319 @@
 const express = require("express"); // Import the Express framework for building web applications
-
 const path = require("path"); // Import the path module for handling file and directory paths
 
 const app = express(); // Initialize the Express application
 
-app.use(express.static("public")); // Define a folder for static files
-
-// Cconfigure PrismaClient for database operations
+// Configure PrismaClient for database operations
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-const bodyParser = require("body-parser"); // Import the body parser module to parse incoming request bodies
+const bodyParser = require("body-parser"); // Middleware for parsing URL-encoded request bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const hbs = require("hbs"); // Import the Handlebars template engine
+const hbs = require("hbs"); // Import Handlebars as the template engine
+const multer = require("multer"); // Middleware for handling file uploads
+const sharp = require("sharp"); // Library for image processing
+const fs = require("fs"); // Node.js file system module for file operations
+const storage = multer.memoryStorage(); // Use in-memory storage for uploaded files
+const upload = multer({ storage }); // Configure Multer with in-memory storage
 
-const multer = require("multer");
-const sharp = require("sharp");
+// Set Handlebars as the template engine
+app.set("view engine", "hbs");
 
-const storage = multer.memoryStorage();
+// Set the directory for Handlebars view templates
+app.set("views", path.join(__dirname, "views"));
 
-const upload = multer({ storage });
+// Register the directory for reusable partial templates
+hbs.registerPartials(path.join(__dirname, "views", "partials"));
 
-app.set("view engine", "hbs"); // Set Handlebars as the template engine for Express
+// Register the directory for static files
+app.use(express.static(path.join(__dirname, "public")));
 
-app.set("views", path.join(__dirname, "views")); // Specify the directory where view templates are located (.hbs files)
+const PORT = 3000; // Define the port on which the server listens for requests
 
-
-hbs.registerPartials(path.join(__dirname, "views", "partials")); // Register the directory for partial templates used in Handlebars (header, footer, etc.)
-
-
-const PORT = 3000; // Define the port on which the server will listen for incoming requests
-
-// Define a route for the root URL that renders the "index.hbs" template (views/index.hbs)
+// Route: Home page listing all games
 app.get("/", async (req, res) => {
     const games = await prisma.game.findMany({
         select: {
-            id: true,          // Game ID
-            name: true,        // Game name
+            id: true,
+            name: true,
             description: true,
             releaseDate: true,
             genreId: true,
             coverPath: true,
             editorId: true,
-            genre: {
-                select: {
-                    name: true, // Genre name
-                },
-            },
-            editor: {
-                select: {
-                    name: true, // Editor name
-                },
-            },
+            genre: { select: { name: true } },
+            editor: { select: { name: true } },
         },
-        orderBy: {
-            name: 'desc', // Sort by name in descending order
-        },
+        orderBy: { name: "desc" }, // Sort games by name in descending order
     });
 
+    // Format release dates for display
     games.forEach(game => {
-        game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
+        game.releaseDate = new Date(game.releaseDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
         });
     });
 
-    res.render("index", { games, title: "VAPEUR - Games" });
+    res.render("index", { games, title: "VAPEUR - Games" }); // Render the home page
 });
 
-// Define a route for the "add a new game" page's URL that renders the "newGame.hbs" template (views/games/newGame.hbs)
+// Route: "Add a new game" form
 app.get("/add-new-game", async (req, res) => {
-    // Query the Prisma database to get all the possible video game genres and editors
-    const genres = await prisma.genre.findMany();
-    const editors = await prisma.editor.findMany();
-    // Pass the genres to the template to show them in the HTML <select> tag of the "add a new game" page
+    const genres = await prisma.genre.findMany(); // Fetch all genres
+    const editors = await prisma.editor.findMany(); // Fetch all editors
     res.render("games/newGame", { genres, editors, title: "VAPEUR - Add a new game" });
 });
 
+// Route: Handle new game submission
 app.post("/submit-game", upload.single("cover"), async (req, res) => {
     const { name, description, releaseDate, editor, genre } = req.body;
 
     const timestamp = Date.now();
-    const outputFilename = `${timestamp}-${req.file.originalname.split('.')[0]}.jpeg`;
+    const outputFilename = `${timestamp}-${req.file.originalname.split(".")[0]}.jpeg`;
     const outputPath = path.join(__dirname, "public/covers", outputFilename);
 
-    try {
-        await sharp(req.file.buffer)
-            .resize({ width: 400, height: 600, fit: "cover" }) // Crop to 400x600 pixels
-            .jpeg({ quality: 80 }) // Compress to 80% quality
-            .toFile(outputPath);
+    // Resize and compress uploaded image
+    await sharp(req.file.buffer)
+        .resize({ width: 400, height: 600, fit: "cover" })
+        .jpeg({ quality: 80 })
+        .toFile(outputPath);
 
-        // Save data to the database
-        const newGame = await prisma.game.create({
-            data: {
-                name,
-                description,
-                releaseDate: new Date(releaseDate), // Convert to Date object
-                editorId: parseInt(editor, 10),
-                genreId: parseInt(genre, 10),
-                coverPath: `covers/${path.basename(outputPath)}`, // Save relative path to the database
-            },
-        });
+    // Save the new game to the database
+    const newGame = await prisma.game.create({
+        data: {
+            name,
+            description,
+            releaseDate: new Date(releaseDate),
+            editorId: parseInt(editor, 10),
+            genreId: parseInt(genre, 10),
+            coverPath: `covers/${path.basename(outputPath)}`,
+        },
+    });
 
-        res.status(201).json({ message: "Game added successfully!", game: newGame });
-    } catch (error) {
-        console.error("Error saving game:", error);
-        res.status(400).json({ message: "Failed to save game" });
-    }
+    res.status(201).json({ message: "Game added successfully!", game: newGame });
 });
 
-app.post("/submit-game-changes", upload.single("cover"), async (req, res) => {
-    const { name, description, releaseDate, editor, genre } = req.body;
+// Route: Handle updates to an existing game
+app.post("/submit-game-changes", upload.none(), async (req, res) => {
+    const { id, name, description, releaseDate, editor, genre } = req.body;
 
-    const timestamp = Date.now();
-    const outputFilename = `${timestamp}-${req.file.originalname.split('.')[0]}.jpeg`;
-    const outputPath = path.join(__dirname, "public/covers", outputFilename);
+    const updatedGame = await prisma.game.update({
+        where: { id: parseInt(id, 10) },
+        data: {
+            name,
+            description,
+            releaseDate: new Date(releaseDate),
+            editorId: parseInt(editor, 10),
+            genreId: parseInt(genre, 10),
+        },
+    });
 
-    try {
-        await sharp(req.file.buffer)
-            .resize({ width: 400, height: 600, fit: "cover" }) // Crop to 400x600 pixels
-            .jpeg({ quality: 80 }) // Compress to 80% quality
-            .toFile(outputPath);
-
-        // Save data to the database
-        const newGame = await prisma.game.create({
-            data: {
-                name,
-                description,
-                releaseDate: new Date(releaseDate), // Convert to Date object
-                editorId: parseInt(editor, 10),
-                genreId: parseInt(genre, 10),
-                coverPath: `covers/${path.basename(outputPath)}`, // Save relative path to the database
-            },
-        });
-
-        res.status(201).json({ message: "Game added successfully!", game: newGame });
-    } catch (error) {
-        console.error("Error saving game:", error);
-        res.status(400).json({ message: "Failed to save game" });
-    }
+    res.status(201).json({ message: "Game successfully updated!", game: updatedGame });
 });
 
+// Route: Handle updates to an editor
+app.post("/submit-editor-changes", upload.none(), async (req, res) => {
+    const { id, name } = req.body;
+
+    const updatedEditor = await prisma.editor.update({
+        where: { id: parseInt(id, 10) },
+        data: { name },
+    });
+
+    res.status(201).json({ message: "Editor successfully updated!", editor: updatedEditor });
+});
+
+// Route: Delete a game
+app.post("/delete-game", upload.none(), async (req, res) => {
+    const { id } = req.body;
+
+    if (!id || isNaN(parseInt(id, 10))) {
+        return res.status(400).json({ message: "Game ID is required and must be a number." });
+    }
+
+    const gameId = parseInt(id, 10);
+
+    // Fetch the game's cover path
+    const game = await prisma.game.findUnique({
+        where: { id: gameId },
+        select: { coverPath: true },
+    });
+
+    if (!game || !game.coverPath) {
+        return res.status(404).json({ message: "Game not found or no cover path available." });
+    }
+
+    const coverPath = path.join(__dirname, "public", game.coverPath);
+    await fs.promises.unlink(coverPath); // Delete the cover image
+
+    // Delete the game from the database
+    const deletedGame = await prisma.game.delete({ where: { id: gameId } });
+
+    res.status(200).json({ message: "Game successfully deleted!" });
+});
+
+// Route: Display all editors
 app.get("/editors", async (req, res) => {
-    // Query the Prisma database to get all the possible video game editors
-    const editors = await prisma.editor.findMany();
+    const editors = await prisma.editor.findMany(); // Fetch all editors
     res.render("games/editors", { editors, title: "VAPEUR - Editors" });
 });
 
+// Route: Display all genres
 app.get("/genres", async (req, res) => {
-    // Query the Prisma database to get all the possible video game editors
-    const genres = await prisma.genre.findMany();
+    const genres = await prisma.genre.findMany(); // Fetch all genres
     res.render("games/genres", { genres, title: "VAPEUR - Genres" });
 });
 
+// Route: "Add a new editor" form
 app.get("/add-new-editor", async (req, res) => {
     res.render("games/newEditor", { title: "VAPEUR - Add a new editor" });
 });
 
+// Route: Handle new editor submission
 app.post("/submit-editor", upload.none(), async (req, res) => {
     const { name } = req.body;
 
-    try {
-
-        const newEditor = await prisma.editor.create({
-            data: {
-                name,
-            },
-        });
-
-        res.status(201).json({ message: "Editor created successfully!", game: newEditor });
-    } catch (error) {
-        console.error("Error when creating editor:", error);
-        res.status(500).json({ message: "An error occurred while creating the editor.\nThis might occur because the editor already exists." });
-    }
+    const newEditor = await prisma.editor.create({ data: { name } });
+    res.status(201).json({ message: "Editor created successfully!", editor: newEditor });
 });
 
+// Route: Display details for a specific game
 app.get("/game/:id", async (req, res) => {
     const { id } = req.params;
 
-    try {
-        // Fetch the editor by ID
-        const game = await prisma.game.findUnique({
-            select: {
-                id: true,          // Game ID
-                name: true,        // Game name
-                description: true,
-                releaseDate: true,
-                genreId: true,
-                coverPath: true,
-                editorId: true,
-                genre: {
-                    select: {
-                        name: true, // Genre name
-                    },
-                },
-                editor: {
-                    select: {
-                        name: true, // Editor name
-                    },
-                },
-            },
-            where: {
-                id: parseInt(id, 10),
-            },
-        });
+    const game = await prisma.game.findUnique({
+        where: { id: parseInt(id, 10) },
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            releaseDate: true,
+            genreId: true,
+            coverPath: true,
+            editorId: true,
+            genre: { select: { name: true } },
+            editor: { select: { name: true } },
+        },
+    });
 
+    game.releaseDate = new Date(game.releaseDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
 
-        if (!game) {
-            return res.status(404).json({ message: 'Game not found' });
-        }
-        else {
-            game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            });
-        }
-
-        // Render the gameDetails.hbs template with game data
-        res.render("games/gameDetails", { game, title: `VAPEUR - ${game.name}` });
-    } catch (error) {
-        console.error("Error fetching game details:", error);
-        res.status(500).render("500", { message: "An error occurred while fetching game details." });
-    }
+    res.render("games/gameDetails", { game, title: `VAPEUR - ${game.name}` });
 });
 
+// Route: Display details for a specific editor
 app.get("/editor/:id", async (req, res) => {
     const { id } = req.params;
 
-    try {
-        // Fetch the editor by ID
-        const editor = await prisma.editor.findUnique({
-            where: {
-                id: parseInt(id, 10),
-            },
+    const editor = await prisma.editor.findUnique({ where: { id: parseInt(id, 10) } });
+
+    const games = await prisma.game.findMany({
+        where: { editorId: parseInt(id, 10) },
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            releaseDate: true,
+            genreId: true,
+            coverPath: true,
+            editorId: true,
+            genre: { select: { name: true } },
+            editor: { select: { name: true } },
+        },
+    });
+
+    games.forEach(game => {
+        game.releaseDate = new Date(game.releaseDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
         });
+    });
 
-        if (!editor) {
-            return res.status(404).render("404", { message: "Editor not found" });
-        }
-
-        const games = await prisma.game.findMany({
-            select: {
-                id: true,          // Game ID
-                name: true,        // Game name
-                description: true,
-                releaseDate: true,
-                genreId: true,
-                coverPath: true,
-                editorId: true,
-                genre: {
-                    select: {
-                        name: true, // Genre name
-                    },
-                },
-                editor: {
-                    select: {
-                        name: true, // Editor name
-                    },
-                },
-            },
-            where: {
-                editorId: parseInt(id, 10),
-            },
-        });
-
-        games.forEach(game => {
-            game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            });
-        });
-
-        // Render the editorDetails.hbs template with editor data
-        res.render("games/editorDetails", { editor, games, title: `VAPEUR - ${editor.name}` });
-    } catch (error) {
-        console.error("Error fetching editor details:", error);
-        res.status(500).render("500", { message: "An error occurred while fetching editor details." });
-    }
+    res.render("games/editorDetails", { editor, games, title: `VAPEUR - ${editor.name}` });
 });
 
+// Route: Display details for a specific genre
 app.get("/genre/:id", async (req, res) => {
     const { id } = req.params;
 
-    try {
-        // Fetch the editor by ID
-        const genre = await prisma.genre.findUnique({
-            where: {
-                id: parseInt(id, 10),
-            },
-        });
+    const genre = await prisma.genre.findUnique({ where: { id: parseInt(id, 10) } });
 
-        if (!genre) {
-            return res.status(404).render("404", { message: "Genre not found" });
-        }
-
-        const games = await prisma.game.findMany({
-            select: {
-                id: true,          // Game ID
-                name: true,        // Game name
-                description: true,
-                releaseDate: true,
-                genreId: true,
-                coverPath: true,
-                editorId: true,
-                genre: {
-                    select: {
-                        name: true, // Genre name
-                    },
-                },
-                editor: {
-                    select: {
-                        name: true, // Editor name
-                    },
-                },
-            },
-            where: {
-                genreId: parseInt(id, 10),
-            },
-        });
-
-        games.forEach(game => {
-            game.releaseDate = new Date(game.releaseDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            });
-        });
-
-        // Render the editorDetails.hbs template with editor data
-        res.render("games/genreDetails", { genre, games, title: `VAPEUR - ${genre.name}` });
-    } catch (error) {
-        console.error("Error fetching editor details:", error);
-        res.status(500).render("500", { message: "An error occurred while fetching editor details." });
+    if (!genre) {
+        return res.status(404).render("404", { message: "Genre not found" });
     }
+
+    const games = await prisma.game.findMany({
+        where: { genreId: parseInt(id, 10) },
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            releaseDate: true,
+            genreId: true,
+            coverPath: true,
+            editorId: true,
+            genre: { select: { name: true } },
+            editor: { select: { name: true } },
+        },
+    });
+
+    games.forEach(game => {
+        game.releaseDate = new Date(game.releaseDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
+    });
+
+    res.render("games/genreDetails", { genre, games, title: `VAPEUR - ${genre.name}` });
 });
 
+// Route: Edit a game
 app.get("/edit-game/:id", async (req, res) => {
     const { id } = req.params;
 
-    try {
-        // Fetch the editor by ID
-        const game = await prisma.game.findUnique({
-            select: {
-                id: true,          // Game ID
-                name: true,        // Game name
-                description: true,
-                releaseDate: true,
-                genreId: true,
-                coverPath: true,
-                editorId: true,
-            },
-            where: {
-                id: parseInt(id, 10),
-            },
-        });
+    const game = await prisma.game.findUnique({
+        where: { id: parseInt(id, 10) },
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            releaseDate: true,
+            genreId: true,
+            coverPath: true,
+            editorId: true,
+        },
+    });
 
-        if (!game) {
-            return res.status(404).json({ message: 'Game not found' });
-        }
+    game.releaseDate = new Date(game.releaseDate).toISOString().split("T")[0]; // Format date for input fields
 
-        game.releaseDate = new Date(game.releaseDate).toISOString().split("T")[0]; // "2024-06-14"
+    const editors = await prisma.editor.findMany();
+    const genres = await prisma.genre.findMany();
 
-        const editors = await prisma.editor.findMany();
-        const genres = await prisma.genre.findMany();
-
-        // Render the gameDetails.hbs template with game data
-        res.render("games/editGame", { game, editors, genres, title: `VAPEUR - Edit a game` });
-    } catch (error) {
-        console.error("Error fetching game:", error);
-        res.status(500).render("500", { message: "An error occurred while fetching game." });
-    }
+    res.render("games/editGame", { game, editors, genres, title: "VAPEUR - Edit a game" });
 });
 
-// Start the server and log a message to indicate that it is running with the port it's running on
+// Route: Edit an editor
+app.get("/edit-editor/:id", async (req, res) => {
+    const { id } = req.params;
+
+    const editor = await prisma.editor.findUnique({
+        where: { id: parseInt(id, 10) },
+        select: { id: true, name: true },
+    });
+
+    res.render("games/editEditor", { editor, title: "VAPEUR - Edit an editor" });
+});
+
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
